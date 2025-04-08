@@ -30,7 +30,9 @@ public:
 
   // destructor
   ~btn() {
-
+    left = nullptr;
+    right = nullptr;
+    parent = nullptr;
   }
 
   btn* getParent() {
@@ -78,48 +80,60 @@ public:
 // prototypes
 void add(btn* &head, btn* current, btn* added);
 void print(btn* current, int depth);
-void cases(btn* current);
+void cases(btn* &head, btn* node);
+void rotateLeft(btn* &head, btn* node);
+void rotateRight(btn* &head, btn* node);
 
 int main() {
+  // instructions
+  cout << "'ADD' to add a number" << endl;
+  cout << "'PRINT' to print the tree" << endl;
+  cout << "'QUIT' to leave" << endl;
+
   btn* head = new btn(0); // head of the tree
-  
+
   while (true) {
     char cmd[8];
     cin.getline(cmd, 8);
-    
+
     if (strcmp(cmd, "ADD") == 0) { // add command
       cout << "through file (f) or manually (m)? ";
       char fm[2];
       cin.getline(fm, 2);
+
       if (strcmp(fm, "m") == 0) { // manually add numbers to the tree
-	int num;
-	cout << "add num: ";
-	cin >> num;
-	btn* added = new btn(num);
-	add(head, head, added);
+        int num;
+        cout << "add num: ";
+        cin >> num;
+        cin.ignore();
+        btn* added = new btn(num);
+        add(head, head, added);
       }
       else if (strcmp(fm, "f") == 0) { // add through file
-	// prepare the tree using file
-	ifstream file("nums.txt");
-	if (file.is_open()) {
-	  string line;
-	  while (getline(file, line)) {
-	    stringstream ss(line);
-	    string word;
-	    while (ss >> word) { // string stream helps with the splitting by spaces
-	      int num = stoi(word); // convert the string to int
-	      btn* added = new btn(num);
-	      add(head, head, added);
-	    }
-	  }
-	  file.close();
-	} else { // files not there
-	  cout << "Unable to open file";
-	}
+        // prepare the tree using file
+        ifstream file("nums.txt");
+        if (file.is_open()) {
+          string line;
+          while (getline(file, line)) {
+            stringstream ss(line);
+            string word;
+            while (ss >> word) { // string stream helps with the splitting by spaces
+              int num = stoi(word); // convert the string to int
+              btn* added = new btn(num);
+              add(head, head, added);
+            }
+          }
+          file.close();
+        } else { // files not there
+          cout << "Unable to open file";
+        }
       }
     }
     else if (strcmp(cmd, "PRINT") == 0) { // print command
       print(head, 0);
+    }
+    else if (strcmp(cmd, "QUIT") == 0) { // quit command
+      break;
     }
   }
 
@@ -133,26 +147,27 @@ void add(btn* &head, btn* current, btn* added) {
     return;
   }
 
-  if (current->getValue() < added->getValue()) { // value is bigger so go right
-    if (current->getRight() == nullptr) {
-      added->setColor(1); // set the new node to red
-      added->setParent(current); // set parent value
-      current->setRight(added);
-      cases(added);
-      return;
-    }
-    add(head, current->getRight(), added); // recurse right
-  }
-  
-  if (current->getValue() > added->getValue()) { // value is less so go left
+  if (added->getValue() < current->getValue()) { // value is bigger so go right
     if (current->getLeft() == nullptr) {
       added->setColor(1); // set the new node to red
       added->setParent(current); // set parent value
       current->setLeft(added);
-      cases(added);
-      return;
+      cases(head, added); // check cases
+    } 
+    else {
+      add(head, current->getLeft(), added); // recurse right
     }
-    add(head, current->getLeft(), added); // recurse left
+  } 
+  else if (added->getValue() > current->getValue()) { // value is less so go left
+    if (current->getRight() == nullptr) {
+      added->setColor(1); // set the new node to red
+      added->setParent(current); // set parent value
+      current->setRight(added);
+      cases(head, added); // check cases
+    } 
+    else {
+      add(head, current->getRight(), added); // recurse left
+    }
   }
 }
 
@@ -175,13 +190,126 @@ void print(btn* current, int depth) {
   print(current->getLeft(), depth + 1); // then print lefts
 }
 
-void cases(btn* current) {
-  if (current->getParent()->getParent() != nullptr) {
-    // ase 3
-    if (current->getColor() == 1 && current->getParent()->getParent()->getColor() == 0 && current->getParent()->getParent()->getLeft()->getColor() == 1 && current->getParent()->getParent()->getRight()->getColor() == 1) { // node is red, parent is red, uncle is red, grandparent is black
-      current->getParent()->getParent()->getLeft()->setColor(0);
-      current->getParent()->getParent()->getRight()->setColor(0);
-      current->getParent()->getParent()->setColor(1);
+// p -> parent
+// x -> node we are rotating on
+// y -> child that will replace x at the top
+// a, b, c -> the children
+
+void rotateLeft(btn* &head, btn* x) {
+  btn* p = x->getParent();
+  btn* y = x->getRight(); // new root of this subtree
+  btn* b = y->getLeft();  // this subtree moves under x
+
+  // Reconnect the parent
+  if (p == nullptr) {
+    head = y; // y becomes the new root
+    y->setParent(nullptr);
+  } 
+  else {
+    if (p->getLeft() == x) {
+      p->setLeft(y);
+    } 
+    else {
+      p->setRight(y);
     }
+    y->setParent(p);
   }
+
+  // Rebuild subtree
+  y->setLeft(x);
+  x->setParent(y);
+
+  x->setRight(b);
+  if (b != nullptr) {
+    b->setParent(x);
+  }
+}
+
+void rotateRight(btn* &head, btn* x) {
+  btn* p = x->getParent();
+  btn* y = x->getLeft();   // new root of this subtree
+  btn* b = y->getRight();  // this subtree moves under x
+
+  // Reconnect the parent
+  if (p == nullptr) {
+    head = y; // y becomes the new root
+    y->setParent(nullptr);
+  } 
+  else {
+    if (p->getLeft() == x) {
+      p->setLeft(y);
+    } 
+    else {
+      p->setRight(y);
+    }
+    y->setParent(p);
+  }
+
+  // Rebuild subtree
+  y->setRight(x);
+  x->setParent(y);
+
+  x->setLeft(b);
+  if (b != nullptr) {
+    b->setParent(x);
+  }
+}
+
+void cases(btn* &head, btn* node) {
+  // case 1: first node is root
+  if (node->getParent() == nullptr) {
+    node->setColor(0);
+    head = node;
+    return;
+  }
+
+  // case 2: parent is black, so do nothing
+  if (node->getParent()->getColor() == 0) {
+    return;
+  }
+
+  // make sure grandparent exists cause if it doesn't, no point in trying the next cases
+  if (node->getParent()->getParent() == nullptr) {
+    return;
+  }
+
+  // store the uncle to a variable
+  btn* uncle = nullptr;
+  if (node->getParent() == node->getParent()->getParent()->getLeft()) { // if nodes parent is the left of grandparent
+    uncle = node->getParent()->getParent()->getRight(); // uncle is right of grandparent
+  } else { // if nodes parent is the right of grandparent
+    uncle = node->getParent()->getParent()->getLeft(); // uncle is left of grandparent
+  }
+
+  // case 3: parent and uncle are red
+  if (uncle != nullptr && uncle->getColor() == 1) {
+    node->getParent()->setColor(0);
+    uncle->setColor(0);
+    node->getParent()->getParent()->setColor(1);
+    cases(head, node->getParent()->getParent()); // recur on grandparent
+    return;
+  }
+
+  // case 4
+  if (node->getParent() == node->getParent()->getParent()->getLeft()) { // parent is left of grandparent
+    if (node == node->getParent()->getRight()) { // node is right child of parent
+      rotateLeft(head, node->getParent()); // rotate to convert to line case
+      node = node->getLeft(); // parent is now node
+    }
+    // case 5: node is left child of left parent
+    node->getParent()->getParent()->setColor(1); // after rotation this makes sense
+    rotateRight(head, node->getParent()->getParent());
+  } 
+  else { // parent is right of grandparent
+    if (node == node->getParent()->getLeft()) { // node is left child of parent
+      rotateRight(head, node->getParent());
+      node = node->getRight(); // parent is now node
+    }
+    // case 5: node is right child of right parent
+    node->getParent()->getParent()->setColor(1); // after rotation this makes sense
+    rotateLeft(head, node->getParent()->getParent());
+  }
+
+  node->getParent()->setColor(0); // ensure black parent after rotation
+  //node->getParent()->getParent()->setColor(1); // and grandparent to red
 }
