@@ -206,7 +206,7 @@ void print(btn* current, int depth) {
 // y -> child that will replace x at the top
 // a, b, c -> the children
 
-// rotate clockwise
+// rotate counterclockwise
 void rotateLeft(btn* &head, btn* x) {
   btn* p = x->getParent();
   btn* y = x->getRight(); // new root of this subtree
@@ -237,7 +237,7 @@ void rotateLeft(btn* &head, btn* x) {
   }
 }
 
-// rotate counterclockwise
+// rotate clockwise
 void rotateRight(btn* &head, btn* x) {
   btn* p = x->getParent();
   btn* y = x->getLeft();   // new root of this subtree
