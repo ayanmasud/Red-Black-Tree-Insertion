@@ -1,3 +1,8 @@
+/* Red Black Tree Insertion: self-balancing binary tree which has red or black nodes
+   Author: Ayan Masud
+   Date: 4/10/2025
+ */
+
 #include <iostream>
 #include <cstring>
 #include <string>
@@ -35,18 +40,22 @@ public:
     parent = nullptr;
   }
 
+  // get parent
   btn* getParent() {
     return parent;
   }
 
+  // set parent
   void setParent(btn* node) {
     parent = node;
   }
 
+  // get color
   int getColor() {
     return color;
   }
 
+  // set color
   void setColor(int newColor) {
     color = newColor;
   }
@@ -140,6 +149,7 @@ int main() {
   return 0;
 }
 
+// add a node to the tree
 void add(btn* &head, btn* current, btn* added) {
   if (head->getValue() == 0) { // empty
     added->setColor(0); // set the heads color to black
@@ -171,6 +181,7 @@ void add(btn* &head, btn* current, btn* added) {
   }
 }
 
+// print the red black tree
 void print(btn* current, int depth) {
   if (current == nullptr || current->getValue() == 0) { // stop
     return;
@@ -195,6 +206,7 @@ void print(btn* current, int depth) {
 // y -> child that will replace x at the top
 // a, b, c -> the children
 
+// rotate clockwise
 void rotateLeft(btn* &head, btn* x) {
   btn* p = x->getParent();
   btn* y = x->getRight(); // new root of this subtree
@@ -225,6 +237,7 @@ void rotateLeft(btn* &head, btn* x) {
   }
 }
 
+// rotate counterclockwise
 void rotateRight(btn* &head, btn* x) {
   btn* p = x->getParent();
   btn* y = x->getLeft();   // new root of this subtree
@@ -255,6 +268,7 @@ void rotateRight(btn* &head, btn* x) {
   }
 }
 
+// check the cases for individual nodes
 void cases(btn* &head, btn* node) {
   // case 1: first node is root
   if (node->getParent() == nullptr) {
@@ -286,30 +300,31 @@ void cases(btn* &head, btn* node) {
     node->getParent()->setColor(0);
     uncle->setColor(0);
     node->getParent()->getParent()->setColor(1);
-    cases(head, node->getParent()->getParent()); // recur on grandparent
+    cases(head, node->getParent()->getParent()); // recursion on grandparent because the grandparent turning red might change things up
     return;
   }
 
   // case 4
-  if (node->getParent() == node->getParent()->getParent()->getLeft()) { // parent is left of grandparent
-    if (node == node->getParent()->getRight()) { // node is right child of parent
-      rotateLeft(head, node->getParent()); // rotate to convert to line case
-      node = node->getLeft(); // parent is now node
+  if (uncle == nullptr || uncle->getColor() == 0) { // uncle is black
+    if (node->getParent() == node->getParent()->getParent()->getLeft()) { // parent is left of grandparent
+      if (node == node->getParent()->getRight()) { // node is right child of parent
+	rotateLeft(head, node->getParent()); // rotate to convert to line case
+	node = node->getLeft(); // parent is now node
+      }
+      // case 5: node is left child of left parent
+      node->getParent()->getParent()->setColor(1); // after rotation this makes sense
+      rotateRight(head, node->getParent()->getParent());
+    } 
+    else { // parent is right of grandparent
+      if (node == node->getParent()->getLeft()) { // node is left child of parent
+	rotateRight(head, node->getParent());
+	node = node->getRight(); // parent is now node
+      }
+      // case 5: node is right child of right parent
+      node->getParent()->getParent()->setColor(1); // after rotation this makes sense
+      rotateLeft(head, node->getParent()->getParent());
     }
-    // case 5: node is left child of left parent
-    node->getParent()->getParent()->setColor(1); // after rotation this makes sense
-    rotateRight(head, node->getParent()->getParent());
-  } 
-  else { // parent is right of grandparent
-    if (node == node->getParent()->getLeft()) { // node is left child of parent
-      rotateRight(head, node->getParent());
-      node = node->getRight(); // parent is now node
-    }
-    // case 5: node is right child of right parent
-    node->getParent()->getParent()->setColor(1); // after rotation this makes sense
-    rotateLeft(head, node->getParent()->getParent());
   }
 
   node->getParent()->setColor(0); // ensure black parent after rotation
-  //node->getParent()->getParent()->setColor(1); // and grandparent to red
 }
